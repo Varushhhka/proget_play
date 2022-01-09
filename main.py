@@ -109,9 +109,9 @@ class Camera:
             obj.rect.x += self.dx
 
 
-def start_screen():
-    intro_text = ["ЗАСТАВКА"]
-    fon = pygame.transform.scale(load_image('fon.jpg'), (WIDTH, HEIGHT))
+def start_screen(text, image):
+    intro_text = [text]
+    fon = pygame.transform.scale(load_image(image), (WIDTH, HEIGHT))
     screen.blit(fon, (0, 0))
     font = pygame.font.Font(None, 30)
     text_coord = 50
@@ -134,13 +134,52 @@ def start_screen():
         clock.tick(60)
 
 
+class Menu:
+    def __init__(self):
+        self.width = 800
+        self.height = 400
+        self.text = ['Начать игру', '1 уровень', '2 уровень', '3 уровень', '4 уровень', '5 уровень', 'Закрыть игру']
+        self.rect_positions = [(25, 20, 212, 45), (25, 70, 178, 45), (25, 120, 178, 45),
+                               (25, 170, 178, 45), (25, 220, 178, 45), (25, 270, 178, 45),
+                               (25, 320, 239, 45)]
+        self.draw_menu()
+
+    def draw(self, screen, n):
+        font = pygame.font.Font(None, 50)
+        text = font.render(self.text[n], True, (100, 255, 100))
+        text_w = text.get_width()
+        text_h = text.get_height()
+        screen.blit(text, (27, 22 + n * 50))
+        pygame.draw.rect(screen, (0, 255, 0), self.rect_positions[n], 3)
+
+    def draw_menu(self):
+        fon = pygame.transform.scale(load_image('fon.jpg'), (WIDTH, HEIGHT))
+        screen.blit(fon, (0, 0))
+        for i in range(7):
+            self.draw(screen, i)
+
+        while True:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    terminate()
+                elif event.type == pygame.MOUSEBUTTONDOWN:
+                    if 25 <= event.pos[0] <= 237 and 20 <= event.pos[1] <= 65:
+                        return
+                    elif 25 <= event.pos[0] <= 264 and 320 <= event.pos[1] <= 365:
+                        pygame.quit()
+                    else:
+                        pass
+            pygame.display.flip()
+            clock.tick(60)
+
+
 def generate_level(level):
     for y in range(len(level)):
         for x in range(len(level[y])):
             if level[y][x] == '#':
                 Platform(200 + x * 50, 388 - y * 50, 25, 10)
             elif level[y][x] == '*':
-                Obstacle(200 + x * 25,    388 - y * 10, 25, 10)
+                Obstacle(200 + x * 25, 388 - y * 10, 25, 10)
 
 
 all_sprites = pygame.sprite.Group()
@@ -162,18 +201,25 @@ character = Character(WIDTH // 8 - CHARACTER_SIZE // 2, HEIGHT - CHARACTER_SIZE 
 
 clock = pygame.time.Clock()
 running = True
-start_screen()
-while running:
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_SPACE:
-                character.jump()
-    screen.fill((0, 0, 0))
-    all_sprites.draw(screen)
-    all_sprites.update()
-    camera.apply()
-    pygame.display.flip()
-    clock.tick(60)
+start_screen('Нажмите для начала игры', 'fon.jpg')
+menu = Menu()
+while True:
+    while running:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_SPACE:
+                    character.jump()
+        screen.fill((0, 0, 0))
+        all_sprites.draw(screen)
+        all_sprites.update()
+        camera.apply()
+        pygame.display.flip()
+        clock.tick(60)
+    if 'победа':
+        start_screen('Вы выиграли!', 'image')
+    else:
+        start_screen('Вы проиграли!', 'image')
+    menu()
 pygame.quit()
