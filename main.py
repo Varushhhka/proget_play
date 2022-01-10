@@ -55,8 +55,9 @@ class Character(pygame.sprite.Sprite):
 
     def check_kill(self):
         if pygame.sprite.spritecollideany(self, obstacle_group):
+            global alive
             self.kill()
-            pygame.quit()
+            alive = False
 
     def move(self):
         collision = pygame.sprite.spritecollideany(self, platforms)
@@ -138,17 +139,19 @@ class Menu:
     def __init__(self):
         self.width = 800
         self.height = 400
+        self.n = 1
         self.text = ['Начать игру', '1 уровень', '2 уровень', '3 уровень', '4 уровень', '5 уровень', 'Закрыть игру']
         self.rect_positions = [(25, 20, 212, 45), (25, 70, 178, 45), (25, 120, 178, 45),
                                (25, 170, 178, 45), (25, 220, 178, 45), (25, 270, 178, 45),
                                (25, 320, 239, 45)]
         self.draw_menu()
 
-    def draw(self, screen, n):
+    def return_level(self):
+        return self.n
+
+    def draw(self, screen, n, color):
         font = pygame.font.Font(None, 50)
-        text = font.render(self.text[n], True, (100, 255, 100))
-        text_w = text.get_width()
-        text_h = text.get_height()
+        text = font.render(self.text[n], True, color)
         screen.blit(text, (27, 22 + n * 50))
         pygame.draw.rect(screen, (0, 255, 0), self.rect_positions[n], 3)
 
@@ -156,15 +159,32 @@ class Menu:
         fon = pygame.transform.scale(load_image('fon.jpg'), (WIDTH, HEIGHT))
         screen.blit(fon, (0, 0))
         for i in range(7):
-            self.draw(screen, i)
+            self.draw(screen, i, (255, 255, 0))
 
         while True:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     terminate()
                 elif event.type == pygame.MOUSEBUTTONDOWN:
+                    for i in range(7):
+                        self.draw(screen, i, (255, 255, 0))
                     if 25 <= event.pos[0] <= 237 and 20 <= event.pos[1] <= 65:
                         return
+                    elif 25 <= event.pos[0] <= 203 and 70 <= event.pos[1] <= 115:
+                        self.n = 1
+                        self.draw(screen, self.n, (0, 255, 0))
+                    elif 25 <= event.pos[0] <= 203 and 120 <= event.pos[1] <= 165:
+                        self.n = 2
+                        self.draw(screen, self.n, (0, 255, 0))
+                    elif 25 <= event.pos[0] <= 203 and 170 <= event.pos[1] <= 215:
+                        self.n = 3
+                        self.draw(screen, self.n, (0, 255, 0))
+                    elif 25 <= event.pos[0] <= 203 and 220 <= event.pos[1] <= 265:
+                        self.n = 4
+                        self.draw(screen, self.n, (0, 255, 0))
+                    elif 25 <= event.pos[0] <= 203 and 270 <= event.pos[1] <= 315:
+                        self.n = 5
+                        self.draw(screen, self.n, (0, 255, 0))
                     elif 25 <= event.pos[0] <= 264 and 320 <= event.pos[1] <= 365:
                         pygame.quit()
                     else:
@@ -193,18 +213,24 @@ CHARACTER_SIZE = 20
 screen = pygame.display.set_mode(SCREEN_SIZE)
 camera = Camera()
 
-level = load_level('1level.txt')
-generate_level(level)
-
 base = MainPlatform()
 character = Character(WIDTH // 8 - CHARACTER_SIZE // 2, HEIGHT - CHARACTER_SIZE - 2, CHARACTER_SIZE)
-
 clock = pygame.time.Clock()
-running = True
+
 start_screen('Нажмите для начала игры', 'fon.jpg')
-menu = Menu()
 while True:
+    menu = Menu()
+    n = menu.return_level()
+    level = load_level(str(n) + 'level.txt')
+    generate_level(level)
+    alive = True
+    finish = False
+    running = True
     while running:
+        if not alive:
+            running = False
+        elif finish:
+            running = False
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
@@ -217,9 +243,8 @@ while True:
         camera.apply()
         pygame.display.flip()
         clock.tick(60)
-    if 'победа':
-        start_screen('Вы выиграли!', 'image')
+    if finish:
+        start_screen('Вы выиграли!', 'fon.jpg')
     else:
-        start_screen('Вы проиграли!', 'image')
-    menu()
+        start_screen('Вы проиграли!', 'fon.jpg')
 pygame.quit()
