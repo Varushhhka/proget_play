@@ -1,4 +1,5 @@
 import os
+import sqlite3
 import sys
 
 import pygame
@@ -140,10 +141,11 @@ class Menu:
         self.width = 800
         self.height = 400
         self.n = 1
-        self.text = ['Начать игру', '1 уровень', '2 уровень', '3 уровень', '4 уровень', '5 уровень', 'Закрыть игру']
+        self.text = ['Начать игру', '1 уровень', '2 уровень', '3 уровень', '4 уровень',
+                     '5 уровень', 'Закрыть игру', 'Результаты']
         self.rect_positions = [(25, 20, 212, 45), (25, 70, 178, 45), (25, 120, 178, 45),
                                (25, 170, 178, 45), (25, 220, 178, 45), (25, 270, 178, 45),
-                               (25, 320, 239, 45)]
+                               (25, 320, 239, 45), (555, 20, 212, 45)]
         self.draw_menu()
 
     def return_level(self):
@@ -160,6 +162,11 @@ class Menu:
         screen.blit(fon, (0, 0))
         for i in range(7):
             self.draw(screen, i, (255, 255, 0))
+
+        font = pygame.font.Font(None, 50)
+        text = font.render(self.text[7], True, (255, 255, 0))
+        screen.blit(text, (557, 22))
+        pygame.draw.rect(screen, (0, 255, 0), self.rect_positions[7], 3)
 
         while True:
             for event in pygame.event.get():
@@ -185,12 +192,30 @@ class Menu:
                     elif 25 <= event.pos[0] <= 203 and 270 <= event.pos[1] <= 315:
                         self.n = 5
                         self.draw(screen, self.n, (0, 255, 0))
+                    elif 555 <= event.pos[0] <= 767 and 20 <= event.pos[1] <= 65:
+                        self.results()
                     elif 25 <= event.pos[0] <= 264 and 320 <= event.pos[1] <= 365:
                         pygame.quit()
                     else:
                         pass
             pygame.display.flip()
             clock.tick(60)
+
+    def results(self):
+        res = Results()
+        res.draw_results()
+
+
+class Results():
+    def __init__(self):
+        self.width = 800
+        self.height = 400
+
+    def draw_results(self):
+        fon = pygame.transform.scale(load_image('fon.jpg'), (WIDTH, HEIGHT))
+        screen.blit(fon, (0, 0))
+        with open('results.txt', 'r') as f:
+            k = f.readlines()
 
 
 def generate_level(level):
@@ -213,16 +238,18 @@ CHARACTER_SIZE = 20
 screen = pygame.display.set_mode(SCREEN_SIZE)
 camera = Camera()
 
-base = MainPlatform()
-character = Character(WIDTH // 8 - CHARACTER_SIZE // 2, HEIGHT - CHARACTER_SIZE - 2, CHARACTER_SIZE)
 clock = pygame.time.Clock()
 
 start_screen('Нажмите для начала игры', 'fon.jpg')
 while True:
+    base = MainPlatform()
+    character = Character(WIDTH // 8 - CHARACTER_SIZE // 2, HEIGHT - CHARACTER_SIZE - 2, CHARACTER_SIZE)
+
     menu = Menu()
     n = menu.return_level()
     level = load_level(str(n) + 'level.txt')
     generate_level(level)
+
     alive = True
     finish = False
     running = True
@@ -247,4 +274,6 @@ while True:
         start_screen('Вы выиграли!', 'fon.jpg')
     else:
         start_screen('Вы проиграли!', 'fon.jpg')
+    for sprite in all_sprites:
+        sprite.kill()
 pygame.quit()
