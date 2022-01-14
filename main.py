@@ -1,5 +1,4 @@
 import os
-import sqlite3
 import sys
 
 import pygame
@@ -169,6 +168,16 @@ class Menu:
         pygame.draw.rect(screen, (0, 255, 0), self.rect_positions[7], 3)
 
         while True:
+            fon = pygame.transform.scale(load_image('fon.jpg'), (WIDTH, HEIGHT))
+            screen.blit(fon, (0, 0))
+            for i in range(7):
+                self.draw(screen, i, (255, 255, 0))
+
+            font = pygame.font.Font(None, 50)
+            text = font.render(self.text[7], True, (255, 255, 0))
+            screen.blit(text, (557, 22))
+            pygame.draw.rect(screen, (0, 255, 0), self.rect_positions[7], 3)
+
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     terminate()
@@ -214,8 +223,41 @@ class Results():
     def draw_results(self):
         fon = pygame.transform.scale(load_image('fon.jpg'), (WIDTH, HEIGHT))
         screen.blit(fon, (0, 0))
-        with open('results.txt', 'r') as f:
-            k = f.readlines()
+        font = pygame.font.Font(None, 30)
+        text_coord = 40
+        string_rendered = font.render('УРОВЕНЬ - РЕЗУЛЬТАТ', True, pygame.Color('black'))
+        intro_rect = string_rendered.get_rect()
+        intro_rect.top = 10
+        intro_rect.x = 10
+        screen.blit(string_rendered, intro_rect)
+
+        with open('results.txt') as f:
+            lines = f.readlines()
+            lines = lines[:10]
+            for line in lines:
+                line = line.split()
+                if line[1] == '1':
+                    message = 'ПРОЙДЕНО'
+                    string_rendered = font.render(f'{line[0]} уровень - {message}', True, pygame.Color('green'))
+                else:
+                    message = 'ПРОВАЛЕНО'
+                    string_rendered = font.render(f'{line[0]} уровень - {message}', True, pygame.Color('red'))
+                intro_rect = string_rendered.get_rect()
+                text_coord += 10
+                intro_rect.top = text_coord
+                intro_rect.x = 10
+                text_coord += intro_rect.height
+                screen.blit(string_rendered, intro_rect)
+
+        while True:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    terminate()
+                elif event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
+                    return
+
+            pygame.display.flip()
+            clock.tick(60)
 
 
 def generate_level(level):
@@ -272,8 +314,20 @@ while True:
         clock.tick(60)
     if finish:
         start_screen('Вы выиграли!', 'fon.jpg')
+        with open('results.txt') as file:
+            lines = file.readlines()
+            lines.insert(0, f'{str(n)} 1\n')
+        with open('results.txt', 'w') as file:
+            for line in lines:
+                file.write(line)
     else:
         start_screen('Вы проиграли!', 'fon.jpg')
+        with open('results.txt') as file:
+            lines = file.readlines()
+            lines.insert(0, f'{str(n)} 0\n')
+        with open('results.txt', 'w') as file:
+            for line in lines:
+                file.write(line)
     for sprite in all_sprites:
         sprite.kill()
 pygame.quit()
