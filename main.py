@@ -135,6 +135,49 @@ def start_screen(text, image):
         clock.tick(60)
 
 
+class MenuButton:
+    def __init__(self, rect, text, action):
+        self.rect = rect
+        self.text = text
+        self.action = action
+
+    def draw(self, screen):
+        font = pygame.font.Font(None, 50)
+        text = font.render(self.text, True, self.get_color())
+        surface = pygame.surface.Surface(self.rect.size, pygame.SRCALPHA)
+        surface.blit(text, (4, 4))
+        pygame.draw.rect(surface, (0, 255, 0), pygame.rect.Rect((0, 0), self.rect.size), 3)
+        screen.blit(surface, self.rect)
+
+    def check_mouse_pos(self, pos):
+        return self.rect.collidepoint(*pos)
+
+    def click(self):
+        self.action()
+
+    def get_color(self):
+        return (255, 255, 0)
+
+
+class MenuLevelButton(MenuButton):
+    def __init__(self, rect, text, action, number, is_active=False):
+        self.number = number
+        self.is_active = is_active
+        super().__init__(rect, text, action)
+
+    def get_color(self):
+        if self.is_active:
+            return (0, 255, 0)
+        else:
+            return (255, 255, 0)
+
+    def set_active(self, status):
+        self.is_active = status
+
+    def click(self):
+        self.action(self.number)
+
+
 class Menu:
     def __init__(self):
         self.width = 800
@@ -145,70 +188,49 @@ class Menu:
         self.rect_positions = [(25, 20, 212, 45), (25, 70, 178, 45), (25, 120, 178, 45),
                                (25, 170, 178, 45), (25, 220, 178, 45), (25, 270, 178, 45),
                                (25, 320, 239, 45), (555, 20, 212, 45)]
-        self.draw_menu()
+        self.buttons = [
+            MenuButton(pygame.rect.Rect(self.rect_positions[0]), self.text[0], self.close),
+            MenuLevelButton(pygame.rect.Rect(self.rect_positions[1]), self.text[1], self.change_level, 1),
+            MenuLevelButton(pygame.rect.Rect(self.rect_positions[2]), self.text[2], self.change_level, 2),
+            MenuLevelButton(pygame.rect.Rect(self.rect_positions[3]), self.text[3], self.change_level, 3),
+            MenuLevelButton(pygame.rect.Rect(self.rect_positions[4]), self.text[4], self.change_level, 4),
+            MenuLevelButton(pygame.rect.Rect(self.rect_positions[5]), self.text[5], self.change_level, 5),
+            MenuButton(pygame.rect.Rect(self.rect_positions[6]), self.text[6], terminate),
+            MenuButton(pygame.rect.Rect(self.rect_positions[7]), self.text[7], self.results)
+        ]
+        self.running = True
 
     def return_level(self):
         return self.n
 
-    def draw(self, screen, n, color):
-        font = pygame.font.Font(None, 50)
-        text = font.render(self.text[n], True, color)
-        screen.blit(text, (27, 22 + n * 50))
-        pygame.draw.rect(screen, (0, 255, 0), self.rect_positions[n], 3)
-
     def draw_menu(self):
         fon = pygame.transform.scale(load_image('fon.jpg'), (WIDTH, HEIGHT))
         screen.blit(fon, (0, 0))
-        for i in range(7):
-            self.draw(screen, i, (255, 255, 0))
 
-        font = pygame.font.Font(None, 50)
-        text = font.render(self.text[7], True, (255, 255, 0))
-        screen.blit(text, (557, 22))
-        pygame.draw.rect(screen, (0, 255, 0), self.rect_positions[7], 3)
-
-        while True:
-            fon = pygame.transform.scale(load_image('fon.jpg'), (WIDTH, HEIGHT))
-            screen.blit(fon, (0, 0))
-            for i in range(7):
-                self.draw(screen, i, (255, 255, 0))
-
-            font = pygame.font.Font(None, 50)
-            text = font.render(self.text[7], True, (255, 255, 0))
-            screen.blit(text, (557, 22))
-            pygame.draw.rect(screen, (0, 255, 0), self.rect_positions[7], 3)
-
+        while self.running:
+            for button in self.buttons:
+                button.draw(screen)
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     terminate()
                 elif event.type == pygame.MOUSEBUTTONDOWN:
-                    for i in range(7):
-                        self.draw(screen, i, (255, 255, 0))
-                    if 25 <= event.pos[0] <= 237 and 20 <= event.pos[1] <= 65:
-                        return
-                    elif 25 <= event.pos[0] <= 203 and 70 <= event.pos[1] <= 115:
-                        self.n = 1
-                        self.draw(screen, self.n, (0, 255, 0))
-                    elif 25 <= event.pos[0] <= 203 and 120 <= event.pos[1] <= 165:
-                        self.n = 2
-                        self.draw(screen, self.n, (0, 255, 0))
-                    elif 25 <= event.pos[0] <= 203 and 170 <= event.pos[1] <= 215:
-                        self.n = 3
-                        self.draw(screen, self.n, (0, 255, 0))
-                    elif 25 <= event.pos[0] <= 203 and 220 <= event.pos[1] <= 265:
-                        self.n = 4
-                        self.draw(screen, self.n, (0, 255, 0))
-                    elif 25 <= event.pos[0] <= 203 and 270 <= event.pos[1] <= 315:
-                        self.n = 5
-                        self.draw(screen, self.n, (0, 255, 0))
-                    elif 555 <= event.pos[0] <= 767 and 20 <= event.pos[1] <= 65:
-                        self.results()
-                    elif 25 <= event.pos[0] <= 264 and 320 <= event.pos[1] <= 365:
-                        pygame.quit()
-                    else:
-                        pass
+                    for button in self.buttons:
+                        if button.check_mouse_pos(event.pos):
+                            button.click()
             pygame.display.flip()
             clock.tick(60)
+
+    def close(self):
+        self.running = False
+
+    def change_level(self, n):
+        for button in self.buttons:
+            if isinstance(button, MenuLevelButton):
+                if button.number != n:
+                    button.set_active(False)
+                else:
+                    button.set_active(True)
+        self.n = n
 
     def results(self):
         res = Results()
@@ -288,6 +310,7 @@ while True:
     character = Character(WIDTH // 8 - CHARACTER_SIZE // 2, HEIGHT - CHARACTER_SIZE - 2, CHARACTER_SIZE)
 
     menu = Menu()
+    menu.draw_menu()
     n = menu.return_level()
     level = load_level(str(n) + 'level.txt')
     generate_level(level)
