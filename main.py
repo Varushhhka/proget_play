@@ -31,7 +31,8 @@ def load_image(name, colorkey=None):
 def load_level(filename):
     filename = "levels/" + filename
     with open(filename, 'r') as mapFile:
-        level_map = [line.strip() for line in mapFile]
+        level_map = [line.strip('\n') for line in mapFile]
+        level_map = level_map[::-1]
 
     max_width = max(map(len, level_map))
     return list(map(lambda x: x.ljust(max_width, '.'), level_map))
@@ -44,20 +45,34 @@ class Character(pygame.sprite.Sprite):
     def __init__(self, x, y, size):
         super().__init__(all_sprites, character_group)
         self.size = size
+        self.colors = [(0, 250, 154), (127, 255, 0), (0, 255, 0), (124, 2, 255)]
+        self.cur_color = 0
         self.image = pygame.Surface((size, size), pygame.SRCALPHA, 32)
-        pygame.draw.rect(self.image, pygame.Color("green"), (0, 0, size, size))
+        pygame.draw.rect(self.image, self.colors[self.cur_color], (0, 0, size, size))
         self.rect = pygame.Rect(x, y, size, size)
         self.velocity = 0
+        self.ticks = 0
 
     def update(self):
+        self.ticks += 1
+        if self.ticks % 20 == 0:
+            self.cur_color = (self.cur_color + 1) % len(self.colors)
+            pygame.draw.rect(self.image, self.colors[self.cur_color], (0, 0, self.size, self.size))
         self.move()
         self.check_kill()
+        self.check_finish()
 
     def check_kill(self):
         if pygame.sprite.spritecollideany(self, obstacle_group):
             global alive
             self.kill()
             alive = False
+
+    def check_finish(self):
+        if pygame.sprite.spritecollideany(self, finish_group):
+            global finish
+            self.kill()
+            finish = True
 
     def move(self):
         collision = pygame.sprite.spritecollideany(self, platforms)
@@ -98,6 +113,14 @@ class Obstacle(pygame.sprite.Sprite):
         super().__init__(all_sprites, movable_group, obstacle_group)
         self.image = pygame.Surface((w, h), pygame.SRCALPHA, 32)
         pygame.draw.rect(self.image, pygame.Color("red"), (0, 0, w, h))
+        self.rect = pygame.Rect(x, y, w, h)
+
+
+class FinishWall(pygame.sprite.Sprite):
+    def __init__(self, x, y, w, h):
+        super().__init__(all_sprites, movable_group, finish_group)
+        self.image = pygame.Surface((w, h), pygame.SRCALPHA, 32)
+        pygame.draw.rect(self.image, pygame.Color("blue"), (0, 0, w, h))
         self.rect = pygame.Rect(x, y, w, h)
 
 
@@ -190,7 +213,7 @@ class Menu:
                                (25, 320, 239, 45), (555, 20, 212, 45)]
         self.buttons = [
             MenuButton(pygame.rect.Rect(self.rect_positions[0]), self.text[0], self.close),
-            MenuLevelButton(pygame.rect.Rect(self.rect_positions[1]), self.text[1], self.change_level, 1),
+            MenuLevelButton(pygame.rect.Rect(self.rect_positions[1]), self.text[1], self.change_level, 1, True),
             MenuLevelButton(pygame.rect.Rect(self.rect_positions[2]), self.text[2], self.change_level, 2),
             MenuLevelButton(pygame.rect.Rect(self.rect_positions[3]), self.text[3], self.change_level, 3),
             MenuLevelButton(pygame.rect.Rect(self.rect_positions[4]), self.text[4], self.change_level, 4),
@@ -204,10 +227,9 @@ class Menu:
         return self.n
 
     def draw_menu(self):
-        fon = pygame.transform.scale(load_image('fon.jpg'), (WIDTH, HEIGHT))
-        screen.blit(fon, (0, 0))
-
         while self.running:
+            fon = pygame.transform.scale(load_image('fon.jpg'), (WIDTH, HEIGHT))
+            screen.blit(fon, (0, 0))
             for button in self.buttons:
                 button.draw(screen)
             for event in pygame.event.get():
@@ -289,12 +311,15 @@ def generate_level(level):
                 Platform(200 + x * 50, 388 - y * 50, 25, 10)
             elif level[y][x] == '*':
                 Obstacle(200 + x * 25, 388 - y * 10, 25, 10)
+            elif level[y][x] == '!':
+                FinishWall(200 + x * 50, 0, 50, 400)
 
 
 all_sprites = pygame.sprite.Group()
 character_group = pygame.sprite.Group()
 movable_group = pygame.sprite.Group()
 obstacle_group = pygame.sprite.Group()
+finish_group = pygame.sprite.Group()
 platforms = pygame.sprite.Group()
 
 SCREEN_SIZE = WIDTH, HEIGHT = 800, 400
