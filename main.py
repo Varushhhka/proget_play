@@ -1,4 +1,5 @@
 import os
+import random
 import sys
 
 import pygame
@@ -38,26 +39,32 @@ def load_level(filename):
     return list(map(lambda x: x.ljust(max_width, '.'), level_map))
 
 
+def random_colors():
+    return random.randint(0, 255), random.randint(0, 255), random.randint(0, 255)
+
+
 class Character(pygame.sprite.Sprite):
     gravity = 0.4
     jump_height = 8
 
     def __init__(self, x, y, size):
         super().__init__(all_sprites, character_group)
+        self.velocity = 0
+        self.ticks = 0
         self.size = size
-        self.colors = [(0, 250, 154), (127, 255, 0), (0, 255, 0), (124, 2, 255)]
         self.cur_color = 0
+        self.colors = [random_colors() for _ in range(20)]
+
         self.image = pygame.Surface((size, size), pygame.SRCALPHA, 32)
         pygame.draw.rect(self.image, self.colors[self.cur_color], (0, 0, size, size))
         self.rect = pygame.Rect(x, y, size, size)
-        self.velocity = 0
-        self.ticks = 0
 
     def update(self):
         self.ticks += 1
-        if self.ticks % 20 == 0:
+        if self.ticks % 10 == 0:
             self.cur_color = (self.cur_color + 1) % len(self.colors)
             pygame.draw.rect(self.image, self.colors[self.cur_color], (0, 0, self.size, self.size))
+
         self.move()
         self.check_kill()
         self.check_finish()
@@ -98,6 +105,7 @@ class Platform(pygame.sprite.Sprite):
         super().__init__(all_sprites, platforms)
         if is_movable:
             self.add(movable_group)
+
         self.image = pygame.Surface((w, h), pygame.SRCALPHA, 32)
         pygame.draw.rect(self.image, color, (0, 0, w, h))
         self.rect = pygame.Rect(x, y, w, h)
@@ -111,6 +119,7 @@ class MainPlatform(Platform):
 class Obstacle(pygame.sprite.Sprite):
     def __init__(self, x, y, w, h):
         super().__init__(all_sprites, movable_group, obstacle_group)
+
         self.image = pygame.Surface((w, h), pygame.SRCALPHA, 32)
         pygame.draw.rect(self.image, pygame.Color("red"), (0, 0, w, h))
         self.rect = pygame.Rect(x, y, w, h)
@@ -119,6 +128,7 @@ class Obstacle(pygame.sprite.Sprite):
 class FinishWall(pygame.sprite.Sprite):
     def __init__(self, x, y, w, h):
         super().__init__(all_sprites, movable_group, finish_group)
+
         self.image = pygame.Surface((w, h), pygame.SRCALPHA, 32)
         pygame.draw.rect(self.image, pygame.Color("blue"), (0, 0, w, h))
         self.rect = pygame.Rect(x, y, w, h)
@@ -133,14 +143,15 @@ class Camera:
             obj.rect.x += self.dx
 
 
-def start_screen(text, image):
-    intro_text = [text]
-    fon = pygame.transform.scale(load_image(image), (WIDTH, HEIGHT))
+def start_screen(text, image, n=0):
+    intro_text = text
+    fon = pygame.transform.scale(load_image(image, n), (WIDTH, HEIGHT))
     screen.blit(fon, (0, 0))
-    font = pygame.font.Font(None, 30)
-    text_coord = 50
+    font = pygame.font.Font(None, 50)
+    text_coord = 20
+
     for line in intro_text:
-        string_rendered = font.render(line, True, pygame.Color('black'))
+        string_rendered = font.render(line, True, pygame.Color('green'))
         intro_rect = string_rendered.get_rect()
         text_coord += 10
         intro_rect.top = text_coord
@@ -154,6 +165,7 @@ def start_screen(text, image):
                 terminate()
             elif event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
                 return
+
         pygame.display.flip()
         clock.tick(60)
 
@@ -179,7 +191,7 @@ class MenuButton:
         self.action()
 
     def get_color(self):
-        return (255, 255, 0)
+        return 255, 255, 0
 
 
 class MenuLevelButton(MenuButton):
@@ -190,9 +202,9 @@ class MenuLevelButton(MenuButton):
 
     def get_color(self):
         if self.is_active:
-            return (0, 255, 0)
+            return 0, 255, 0
         else:
-            return (255, 255, 0)
+            return 255, 255, 0
 
     def set_active(self, status):
         self.is_active = status
@@ -208,9 +220,9 @@ class Menu:
         self.n = 1
         self.text = ['Начать игру', '1 уровень', '2 уровень', '3 уровень', '4 уровень',
                      '5 уровень', 'Закрыть игру', 'Результаты']
-        self.rect_positions = [(25, 20, 212, 45), (25, 70, 178, 45), (25, 120, 178, 45),
-                               (25, 170, 178, 45), (25, 220, 178, 45), (25, 270, 178, 45),
-                               (25, 320, 239, 45), (555, 20, 212, 45)]
+        self.rect_positions = [(125, 20, 212, 45), (125, 70, 178, 45), (125, 120, 178, 45),
+                               (125, 170, 178, 45), (125, 220, 178, 45), (125, 270, 178, 45),
+                               (125, 320, 239, 45), (455, 20, 212, 45)]
         self.buttons = [
             MenuButton(pygame.rect.Rect(self.rect_positions[0]), self.text[0], self.close),
             MenuLevelButton(pygame.rect.Rect(self.rect_positions[1]), self.text[1], self.change_level, 1, True),
@@ -228,7 +240,7 @@ class Menu:
 
     def draw_menu(self):
         while self.running:
-            fon = pygame.transform.scale(load_image('fon.jpg'), (WIDTH, HEIGHT))
+            fon = pygame.transform.scale(load_image('menu.jpg'), (WIDTH, HEIGHT))
             screen.blit(fon, (0, 0))
             for button in self.buttons:
                 button.draw(screen)
@@ -239,6 +251,7 @@ class Menu:
                     for button in self.buttons:
                         if button.check_mouse_pos(event.pos):
                             button.click()
+
             pygame.display.flip()
             clock.tick(60)
 
@@ -259,21 +272,25 @@ class Menu:
         res.draw_results()
 
 
-class Results():
+class Results:
     def __init__(self):
         self.width = 800
         self.height = 400
 
     def draw_results(self):
-        fon = pygame.transform.scale(load_image('fon.jpg'), (WIDTH, HEIGHT))
+        fon = pygame.transform.scale(load_image('menu.jpg'), (WIDTH, HEIGHT))
         screen.blit(fon, (0, 0))
         font = pygame.font.Font(None, 30)
-        text_coord = 40
-        string_rendered = font.render('УРОВЕНЬ - РЕЗУЛЬТАТ', True, pygame.Color('black'))
+        text_coord = 60
+
+        text = 'УРОВЕНЬ - РЕЗУЛЬТАТ'
+        string_rendered = font.render(text, True, pygame.Color('green'))
         intro_rect = string_rendered.get_rect()
-        intro_rect.top = 10
-        intro_rect.x = 10
+        intro_rect.top = 30
+        intro_rect.x = 250
+
         screen.blit(string_rendered, intro_rect)
+        pygame.draw.rect(screen, (0, 255, 0), (240, 20, 260, 40), 3)
 
         with open('results.txt') as f:
             lines = f.readlines()
@@ -289,7 +306,7 @@ class Results():
                 intro_rect = string_rendered.get_rect()
                 text_coord += 10
                 intro_rect.top = text_coord
-                intro_rect.x = 10
+                intro_rect.x = 250
                 text_coord += intro_rect.height
                 screen.blit(string_rendered, intro_rect)
 
@@ -326,10 +343,9 @@ SCREEN_SIZE = WIDTH, HEIGHT = 800, 400
 CHARACTER_SIZE = 20
 screen = pygame.display.set_mode(SCREEN_SIZE)
 camera = Camera()
-
 clock = pygame.time.Clock()
 
-start_screen('Нажмите для начала игры', 'fon.jpg')
+start_screen([], 'start_screen.jpg')
 while True:
     base = MainPlatform()
     character = Character(WIDTH // 8 - CHARACTER_SIZE // 2, HEIGHT - CHARACTER_SIZE - 2, CHARACTER_SIZE)
@@ -360,8 +376,9 @@ while True:
         camera.apply()
         pygame.display.flip()
         clock.tick(60)
+
     if finish:
-        start_screen('Вы выиграли!', 'fon.jpg')
+        start_screen(['Вы выиграли,', 'какая жАлОсть!'], 'win.jpg', -1)
         with open('results.txt') as file:
             lines = file.readlines()
             lines.insert(0, f'{str(n)} 1\n')
@@ -369,13 +386,14 @@ while True:
             for line in lines:
                 file.write(line)
     else:
-        start_screen('Вы проиграли!', 'fon.jpg')
+        start_screen(['Вы проиграли,', 'какая прЕлЕсть!'], 'gameover.jpg', -1)
         with open('results.txt') as file:
             lines = file.readlines()
             lines.insert(0, f'{str(n)} 0\n')
         with open('results.txt', 'w') as file:
             for line in lines:
                 file.write(line)
+
     for sprite in all_sprites:
         sprite.kill()
 pygame.quit()
