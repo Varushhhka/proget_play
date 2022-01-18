@@ -327,7 +327,7 @@ def generate_level(level):
             if level[y][x] == '#':
                 Platform(200 + x * 50, 388 - y * 50, 25, 10)
             elif level[y][x] == '*':
-                Obstacle(200 + x * 25, 388 - y * 10, 25, 10)
+                Obstacle(200 + x * 50, 388 - y * 50, 25, 10)
             elif level[y][x] == '!':
                 FinishWall(200 + x * 50, 0, 50, 400)
 
@@ -378,7 +378,7 @@ while True:
         clock.tick(60)
 
     if finish:
-        start_screen(['Вы выиграли,', 'какая жАлОсть!'], 'win.jpg', -1)
+        start_screen(['Вы выиграли,', 'какая жАлОсть!'], 'win.jpg')
         with open('results.txt') as file:
             lines = file.readlines()
             lines.insert(0, f'{str(n)} 1\n')
@@ -386,7 +386,7 @@ while True:
             for line in lines:
                 file.write(line)
     else:
-        start_screen(['Вы проиграли,', 'какая прЕлЕсть!'], 'gameover.jpg', -1)
+        start_screen(['Вы проиграли,', 'какая прЕлЕсть!'], 'gameover.jpg')
         with open('results.txt') as file:
             lines = file.readlines()
             lines.insert(0, f'{str(n)} 0\n')
