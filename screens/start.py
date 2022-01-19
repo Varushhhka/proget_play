@@ -4,7 +4,7 @@ from constants import WIDTH, HEIGHT
 from misc import load_image, terminate
 
 
-def start_screen(screen, clock, text, image, n=0):
+def start_screen(screen, clock, text, image, stars=False, n=0):
     intro_text = text
     fon = pygame.transform.scale(load_image(image, n), (WIDTH, HEIGHT))
     screen.blit(fon, (0, 0))
@@ -26,6 +26,5 @@ def start_screen(screen, clock, text, image, n=0):
                 terminate()
             elif event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
                 return
-
         pygame.display.flip()
         clock.tick(60)
