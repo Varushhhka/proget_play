@@ -44,7 +44,7 @@ while True:
         clock.tick(60)
 
     if character.is_finished():
-        start_screen(screen, clock, ['Вы выиграли,', 'какая жАлОсть!'], 'finish_screen.jpg')
+        start_screen(screen, clock, ['Вы выиграли,', 'какая жАлОсть!'], 'finish_screen.jpg', True)
         with open('results.txt') as file:
             lines = file.readlines()
             lines.insert(0, f'{str(n)} 1\n')
@@ -52,7 +52,7 @@ while True:
             for line in lines:
                 file.write(line)
     else:
-        start_screen(screen, clock, ['Вы проиграли,', 'какая прЕлЕсть!'], 'finish_screen.jpg')
+        start_screen(screen, clock, ['Вы проиграли,', 'какая прЕлЕсть!'], 'finish_screen.jpg', True)
         with open('results.txt') as file:
             lines = file.readlines()
             lines.insert(0, f'{str(n)} 0\n')
